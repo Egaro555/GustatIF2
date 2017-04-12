@@ -22,15 +22,7 @@ class updateRestaurantAction implements Action {
 
         result = false;
 
-        Restaurant r = null;
-
-        for (Restaurant restaurant : ServiceMetier.findAllRestaurants()) {
-
-            if (restaurant.getId() == Long.parseLong(request.getParameter("r"))) {
-                r = restaurant;
-            }
-
-        }
+        Restaurant r = ServiceMetier.getRestaurantById(Long.parseLong(request.getParameter("r")));
 
         if (r != null) {
 
@@ -52,7 +44,7 @@ class updateRestaurantAction implements Action {
 
             if (request.getParameter("longitude") != null) {
                 r.setLatitudeLongitude(r.getLatitude(), Double.parseDouble(request.getParameter("longitude")));
- 
+
             }
 
             ServiceMetier.updateRestaurant(r);

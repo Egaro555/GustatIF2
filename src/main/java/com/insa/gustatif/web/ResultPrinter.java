@@ -8,6 +8,7 @@ package com.insa.gustatif.web;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.insa.gustatif.metier.modele.Client;
 import com.insa.gustatif.metier.modele.Commande;
@@ -117,17 +118,9 @@ class ResultPrinter {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         for (Client c : clients) {
-            JsonObject jsonClient = new JsonObject();
 
-            jsonClient.addProperty("id", c.getId());
-            jsonClient.addProperty("addresse", c.getAdresse());
-            jsonClient.addProperty("mail", c.getMail());
-            jsonClient.addProperty("nom", c.getNom());
-            jsonClient.addProperty("prenom", c.getPrenom());
-            jsonClient.addProperty("latitude", c.getLatitude());
-            jsonClient.addProperty("longitude", c.getLongitude());
-
-            jsonListe.add(jsonClient);
+            jsonListe.add(encodeClientToJSON(c));
+            
         }
 
         JsonObject container = new JsonObject();
@@ -182,45 +175,8 @@ class ResultPrinter {
         Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
         for (Commande c : commandes) {
-            JsonObject jsonCommande = new JsonObject();
 
-            jsonCommande.addProperty("numCommande", c.getNumCommande());
-            jsonCommande.addProperty("client", (c.getClient() != null) ? c.getClient().getId() : null);
-            jsonCommande.addProperty("dateCommande", c.getDateCommande().toString());
-            jsonCommande.addProperty("dateReception",(c.getDateReception() != null) ? c.getDateReception().toString() : null);
-            jsonCommande.addProperty("livreur", (c.getLivreur() != null) ? c.getLivreur().getIdLivreur() : null);
-            jsonCommande.addProperty("poidsTotal", c.getPoidsTotal());
-            jsonCommande.addProperty("prixTotal", c.getPrixTotal());
-
-            JsonArray jsonListeProduitCommande = new JsonArray();
-
-            if (c.getProduitCommande() != null) {
-
-                for (ProduitCommande pc : c.getProduitCommande()) {
-
-                    JsonObject jsonProduitCommande = new JsonObject();
-                    
-                    JsonObject jsonProduit = new JsonObject();
-                    
-                    jsonProduit.addProperty("id", pc.getProduit().getId());
-                    jsonProduit.addProperty("denomination", pc.getProduit().getDenomination());
-                    jsonProduit.addProperty("description", pc.getProduit().getDescription());
-                    jsonProduit.addProperty("prix", pc.getProduit().getPrix());
-                    jsonProduit.addProperty("poids", pc.getProduit().getPoids());
-
-                    jsonProduitCommande.add("produit", jsonProduit);
-                    jsonProduitCommande.addProperty("qte", pc.getQte());
-
-                    jsonListeProduitCommande.add(jsonProduitCommande);
-                }
-
-                jsonCommande.add("produitCommande", jsonListeProduitCommande);
-
-            } else {
-                jsonCommande.addProperty("produitCommande", (Number) null);
-            }
-
-            jsonCommande.addProperty("restaurant", (c.getRestaurant() != null) ? c.getRestaurant().getId() : null);
+            JsonObject jsonCommande = encodeCommandeToJSON(c);
 
             jsonListe.add(jsonCommande);
         }
@@ -229,6 +185,89 @@ class ResultPrinter {
         container.add("commandes", jsonListe);
         String json = gson.toJson(container);
         out.println(json);
+    }
+
+    void printClientAsJSON(Client client) {
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        JsonObject container = new JsonObject();
+        container.add("client", encodeClientToJSON(client));
+        String json = gson.toJson(container);
+        out.println(json);
+
+    }
+
+    void printCommandeAsJSON(Commande commande) {
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        JsonObject container = new JsonObject();
+        container.add("commande", encodeCommandeToJSON(commande));
+        String json = gson.toJson(container);
+        out.println(json);
+
+    }
+
+    private JsonObject encodeCommandeToJSON(Commande c) {
+
+        JsonObject jsonCommande = new JsonObject();
+
+        jsonCommande.addProperty("numCommande", c.getNumCommande());
+        jsonCommande.addProperty("client", (c.getClient() != null) ? c.getClient().getId() : null);
+        jsonCommande.addProperty("dateCommande", (c.getDateCommande() != null) ? c.getDateCommande().toString() : null);
+        jsonCommande.addProperty("dateReception", (c.getDateReception() != null) ? c.getDateReception().toString() : null);
+        jsonCommande.addProperty("livreur", (c.getLivreur() != null) ? c.getLivreur().getIdLivreur() : null);
+        jsonCommande.addProperty("poidsTotal", c.getPoidsTotal());
+        jsonCommande.addProperty("prixTotal", c.getPrixTotal());
+
+        JsonArray jsonListeProduitCommande = new JsonArray();
+
+        if (c.getProduitCommande() != null) {
+
+            for (ProduitCommande pc : c.getProduitCommande()) {
+
+                JsonObject jsonProduitCommande = new JsonObject();
+
+                JsonObject jsonProduit = new JsonObject();
+
+                jsonProduit.addProperty("id", pc.getProduit().getId());
+                jsonProduit.addProperty("denomination", pc.getProduit().getDenomination());
+                jsonProduit.addProperty("description", pc.getProduit().getDescription());
+                jsonProduit.addProperty("prix", pc.getProduit().getPrix());
+                jsonProduit.addProperty("poids", pc.getProduit().getPoids());
+
+                jsonProduitCommande.add("produit", jsonProduit);
+                jsonProduitCommande.addProperty("qte", pc.getQte());
+
+                jsonListeProduitCommande.add(jsonProduitCommande);
+            }
+
+            jsonCommande.add("produitCommande", jsonListeProduitCommande);
+
+        } else {
+            jsonCommande.addProperty("produitCommande", (Number) null);
+        }
+
+        jsonCommande.addProperty("restaurant", (c.getRestaurant() != null) ? c.getRestaurant().getId() : null);
+
+        return jsonCommande;
+
+    }
+
+    private JsonObject encodeClientToJSON(Client client) {
+ 
+        JsonObject jsonClient = new JsonObject();
+
+        jsonClient.addProperty("id", client.getId());
+        jsonClient.addProperty("addresse", client.getAdresse());
+        jsonClient.addProperty("mail", client.getMail());
+        jsonClient.addProperty("nom", client.getNom());
+        jsonClient.addProperty("prenom", client.getPrenom());
+        jsonClient.addProperty("latitude", client.getLatitude());
+        jsonClient.addProperty("longitude", client.getLongitude());
+
+        return jsonClient;
     }
 
 }

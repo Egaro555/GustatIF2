@@ -5,7 +5,7 @@
  */
 package com.insa.gustatif.web;
 
-import com.insa.gustatif.metier.modele.Restaurant;
+import com.insa.gustatif.metier.modele.Client;
 import com.insa.gustatif.metier.service.ServiceMetier;
 import javax.servlet.http.HttpServletRequest;
 
@@ -13,26 +13,19 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author Benjamin
  */
-class deleteRestaurantAction implements Action {
+class connexionClientEmailAction implements Action {
 
-    boolean result;
-
+    Client client;
+    
     @Override
     public void execute(HttpServletRequest request) {
-
-        result = false;
-
-        Restaurant r = ServiceMetier.getRestaurantById(Long.parseLong(request.getParameter("r")));
-
-        if (r != null) {
-            ServiceMetier.deleteRestaurant(r);
-            result = true;
-        }
-
+        client = ServiceMetier.connexionClientEmail(request.getParameter("email"), Long.parseLong(request.getParameter("idClient")));
     }
 
-    public boolean getResult() {
-        return result;
+    public Client getClient() {
+        return client;
     }
-
+    
+ 
+    
 }

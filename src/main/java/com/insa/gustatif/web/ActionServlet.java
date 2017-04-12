@@ -14,6 +14,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  *
@@ -43,14 +44,38 @@ public class ActionServlet extends HttpServlet {
 
         ResultPrinter resultPrinter = new ResultPrinter(response.getWriter());
 
-        boolean auth = true;
+        HttpSession session = request.getSession(true);
+
+        Client authClient = (Client) session.getAttribute("client");
+
+        boolean auth = authClient != null;
 
         if (uri.length == 3 && uri[1].equals("service")) {
 
             String serviceName = uri[2];
 
-            if (serviceName.equals("connexionClientEmail")) {
+            if (serviceName.equals("connexionClientEmail") && request.getParameter("email") != null && request.getParameter("idClient") != null) {
 
+                if (auth) {
+                    resultPrinter.printClientAsJSON(authClient);
+                } else {
+
+                    connexionClientEmailAction action = new connexionClientEmailAction();
+                    action.execute(request);
+
+                    Client client = action.getClient();
+
+                    if (client != null) {
+                        session.setAttribute("client", client);
+                        
+                        session.setAttribute("commande", new Commande(client, new ArrayList(), null, null));
+
+                        resultPrinter.printClientAsJSON(client);
+                    } else {
+                        resultPrinter.printBooleanResultAsJSON(false);
+                    }
+
+                }
             } else if (serviceName.equals("creerClient") && request.getParameter("nom") != null && request.getParameter("prenom") != null && request.getParameter("mail") != null && request.getParameter("adresse") != null) {
 
                 creerClientAction action = new creerClientAction();
@@ -62,7 +87,12 @@ public class ActionServlet extends HttpServlet {
 
             } else if (serviceName.equals("deconnexionClient")) {
 
-            } else if (serviceName.equals("searchRestaurants") && request.getParameter("research") != null) {
+                resultPrinter.printBooleanResultAsJSON(auth);
+
+                session.removeAttribute("client");
+                session.removeAttribute("commande");
+
+            } else if (auth && serviceName.equals("searchRestaurants") && request.getParameter("research") != null) {
 
                 searchRestaurantsAction action = new searchRestaurantsAction();
                 action.execute(request);
@@ -71,35 +101,44 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printRestaurantListAsJSON(foundRestaurants);
 
-            } else if (serviceName.equals("searchProduits") && request.getParameter("research") != null && request.getParameter("r") != null) {
+            } else if (auth && serviceName.equals("searchProduits") && request.getParameter("research") != null && request.getParameter("r") != null) {
 
-                searchProduitsAction action = new searchProduitsAction();
+                searchProduitsAction action = new searchProduitsAction(session);
                 action.execute(request);
 
                 List<Produit> foundProduits = action.getFoundProduits();
 
                 resultPrinter.printProduitsListAsJSON(foundProduits);
 
-            } else if (serviceName.equals("addProduitCommande") && request.getParameter("c") != null && request.getParameter("p") != null && request.getParameter("qte") != null) {
-                
-                addProduitCommandeAction action = new addProduitCommandeAction();
+            } else if (auth && serviceName.equals("setProduitCommande") && request.getParameter("p") != null && request.getParameter("qte") != null) {
+
+                setProduitCommandeAction action = new setProduitCommandeAction(session);
+                action.execute(request);                              
+
+                resultPrinter.printCommandeAsJSON((Commande) session.getAttribute("commande"));
+
+            } else if (auth && serviceName.equals("removeProduitCommande") && request.getParameter("p") != null) {
+
+                removeProduitCommandeAction action = new removeProduitCommandeAction(session);
                 action.execute(request);
+                
+                resultPrinter.printCommandeAsJSON((Commande) session.getAttribute("commande"));
 
-                boolean result = action.getResult();
+            } else if (auth && serviceName.equals("traiterCommande")) {
+                
+                traiterCommandeAction action = new traiterCommandeAction(session);
+                action.execute(request);       
+                
+                resultPrinter.printBooleanResultAsJSON(action.getResult());
 
-                resultPrinter.printBooleanResultAsJSON(result);
+            } else if (auth && serviceName.equals("cloturerCommandeLivreur") && request.getParameter("l") != null) {
+                
+                cloturerCommandeLivreurAction action = new cloturerCommandeLivreurAction();
+                action.execute(request);       
+                
+                resultPrinter.printBooleanResultAsJSON(true);                
 
-            } else if (serviceName.equals("removeProduitCommande")) {
-
-            } else if (serviceName.equals("modifierQuantiteProduit")) {
-
-            } else if (serviceName.equals("removeProduitCommande")) {
-
-            } else if (serviceName.equals("traiterCommande")) {
-
-            } else if (serviceName.equals("cloturerCommande")) {
-
-            } else if (serviceName.equals("findAllLivreurs")) {
+            } else if (auth && serviceName.equals("findAllLivreurs")) {
 
                 findAllLivreursAction action = new findAllLivreursAction();
                 action.execute(request);
@@ -112,7 +151,7 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printLivreurListAsJSON(allLivreurs);
 
-            } else if (serviceName.equals("findAllVelos")) {
+            } else if (auth && serviceName.equals("findAllVelos")) {
 
                 findAllVelosAction action = new findAllVelosAction();
                 action.execute(request);
@@ -121,7 +160,7 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printLivreurListAsJSON(allVelos);
 
-            } else if (serviceName.equals("findAllDrones")) {
+            } else if (auth && serviceName.equals("findAllDrones")) {
 
                 findAllDronesAction action = new findAllDronesAction();
                 action.execute(request);
@@ -130,7 +169,7 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printLivreurListAsJSON(allDrones);
 
-            } else if (serviceName.equals("findAllClients")) {
+            } else if (auth && serviceName.equals("findAllClients")) {
 
                 findAllClientsAction action = new findAllClientsAction();
                 action.execute(request);
@@ -139,7 +178,7 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printClientListAsJSON(allClients);
 
-            } else if (serviceName.equals("findAllRestaurants")) {
+            } else if (auth && serviceName.equals("findAllRestaurants")) {
 
                 findAllRestaurantsAction action = new findAllRestaurantsAction();
                 action.execute(request);
@@ -148,7 +187,7 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printRestaurantListAsJSON(allRestaurants);
 
-            } else if (serviceName.equals("getCommandesEnCours")) {
+            } else if (auth && serviceName.equals("getCommandesEnCours")) {
 
                 getCommandesEnCoursAction action = new getCommandesEnCoursAction();
                 action.execute(request);
@@ -157,7 +196,7 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printCommandeListAsJSON(commandesEnCours);
 
-            } else if (serviceName.equals("creerLivreurDrone")  && request.getParameter("chargeMaxi") != null && request.getParameter("adr") != null && request.getParameter("vitesseMoy") != null) {
+            } else if (auth && serviceName.equals("creerLivreurDrone") && request.getParameter("chargeMaxi") != null && request.getParameter("adr") != null && request.getParameter("vitesseMoy") != null) {
 
                 creerLivreurDroneAction action = new creerLivreurDroneAction();
                 action.execute(request);
@@ -166,7 +205,7 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printBooleanResultAsJSON(result);
 
-            } else if (serviceName.equals("creerLivreurVelo")  && request.getParameter("chargeMaxi") != null && request.getParameter("adr") != null && request.getParameter("nom") != null && request.getParameter("prenom") != null && request.getParameter("mail") != null) {
+            } else if (auth && serviceName.equals("creerLivreurVelo") && request.getParameter("chargeMaxi") != null && request.getParameter("adr") != null && request.getParameter("nom") != null && request.getParameter("prenom") != null && request.getParameter("mail") != null) {
 
                 creerLivreurVeloAction action = new creerLivreurVeloAction();
                 action.execute(request);
@@ -175,47 +214,47 @@ public class ActionServlet extends HttpServlet {
 
                 resultPrinter.printBooleanResultAsJSON(result);
 
-            } else if (serviceName.equals("creerRestaurant") && request.getParameter("denomination") != null && request.getParameter("description") != null && request.getParameter("adresse") != null) {
-                
+            } else if (auth && serviceName.equals("creerRestaurant") && request.getParameter("denomination") != null && request.getParameter("description") != null && request.getParameter("adresse") != null) {
+
                 creerRestaurantAction action = new creerRestaurantAction();
                 action.execute(request);
 
                 boolean result = true;
 
-                resultPrinter.printBooleanResultAsJSON(result);                
+                resultPrinter.printBooleanResultAsJSON(result);
 
-            } else if (serviceName.equals("updateRestaurant") && request.getParameter("r") != null) {
-                
+            } else if (auth && serviceName.equals("updateRestaurant") && request.getParameter("r") != null) {
+
                 updateRestaurantAction action = new updateRestaurantAction();
                 action.execute(request);
 
                 boolean result = action.getResult();
 
-                resultPrinter.printBooleanResultAsJSON(result); 
+                resultPrinter.printBooleanResultAsJSON(result);
 
-            } else if (serviceName.equals("deleteRestaurant") && request.getParameter("r") != null) {
-                
+            } else if (auth && serviceName.equals("deleteRestaurant") && request.getParameter("r") != null) {
+
                 deleteRestaurantAction action = new deleteRestaurantAction(); //NOTE: bug ?
                 action.execute(request);
 
                 boolean result = action.getResult();
 
-                resultPrinter.printBooleanResultAsJSON(result);                   
+                resultPrinter.printBooleanResultAsJSON(result);
 
-            } else if (serviceName.equals("creerProduit") && request.getParameter("denomination") != null && request.getParameter("description") != null && request.getParameter("poids") != null && request.getParameter("prix") != null) {
-                
+            } else if (auth && serviceName.equals("creerProduit") && request.getParameter("denomination") != null && request.getParameter("description") != null && request.getParameter("poids") != null && request.getParameter("prix") != null) {
+
                 creerProduitAction action = new creerProduitAction();
                 action.execute(request);
 
                 boolean result = true;
 
-                resultPrinter.printBooleanResultAsJSON(result);                   
+                resultPrinter.printBooleanResultAsJSON(result);
 
-            } else if (serviceName.equals("connexionLivreur")) {
+            } else if (auth && serviceName.equals("connexionLivreur")) {
 
-            } else if (serviceName.equals("traiterCommande")) {
+            } else if (auth && serviceName.equals("traiterCommande")) {
 
-            } else if (serviceName.equals("cloturerCommandeLivreur")) {
+            } else if (auth && serviceName.equals("cloturerCommandeLivreur")) {
 
             } else {
 

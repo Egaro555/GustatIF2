@@ -5,7 +5,7 @@
  */
 package com.insa.gustatif.web;
 
-import com.insa.gustatif.metier.modele.Restaurant;
+import com.insa.gustatif.metier.modele.Livreur;
 import com.insa.gustatif.metier.service.ServiceMetier;
 import javax.servlet.http.HttpServletRequest;
 
@@ -13,26 +13,17 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author Benjamin
  */
-class deleteRestaurantAction implements Action {
-
-    boolean result;
+class cloturerCommandeLivreurAction implements Action {
 
     @Override
     public void execute(HttpServletRequest request) {
 
-        result = false;
+        Livreur l = null;
 
-        Restaurant r = ServiceMetier.getRestaurantById(Long.parseLong(request.getParameter("r")));
+        ServiceMetier.findLivreurById(Long.parseLong(request.getParameter("l")));
 
-        if (r != null) {
-            ServiceMetier.deleteRestaurant(r);
-            result = true;
-        }
+        ServiceMetier.cloturerCommandeLivreur(l);
 
-    }
-
-    public boolean getResult() {
-        return result;
     }
 
 }
