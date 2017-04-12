@@ -10,8 +10,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.insa.gustatif.metier.modele.Client;
+import com.insa.gustatif.metier.modele.Commande;
 import com.insa.gustatif.metier.modele.Livreur;
+import com.insa.gustatif.metier.modele.LivreurDrone;
+import com.insa.gustatif.metier.modele.LivreurVelo;
 import com.insa.gustatif.metier.modele.Produit;
+import com.insa.gustatif.metier.modele.ProduitCommande;
 import com.insa.gustatif.metier.modele.Restaurant;
 import java.io.PrintWriter;
 import java.util.List;
@@ -87,6 +91,16 @@ class ResultPrinter {
             jsonLivreur.addProperty("latitude", l.getLatitude());
             jsonLivreur.addProperty("longitude", l.getLongitude());
 
+            if (l instanceof LivreurDrone) {
+                jsonLivreur.addProperty("type", "Drone");
+                jsonLivreur.addProperty("vitesseMoyenne", ((LivreurDrone) l).getVitesseMoyenne());
+            } else if (l instanceof LivreurVelo) {
+                jsonLivreur.addProperty("type", "Velo");
+                jsonLivreur.addProperty("nom", ((LivreurVelo) l).getNom());
+                jsonLivreur.addProperty("prnom", ((LivreurVelo) l).getPrenom());
+                jsonLivreur.addProperty("mail", ((LivreurVelo) l).getMail());
+            }
+
             jsonListe.add(jsonLivreur);
         }
 
@@ -149,6 +163,72 @@ class ResultPrinter {
         String json = gson.toJson(container);
         out.println(json);
 
+    }
+
+    void printBooleanResultAsJSON(boolean result) {
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        JsonObject container = new JsonObject();
+        container.addProperty("result", result);
+
+        String json = gson.toJson(container);
+        out.println(json);
+    }
+
+    void printCommandeListAsJSON(List<Commande> commandes) {
+
+        JsonArray jsonListe = new JsonArray();
+        Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+
+        for (Commande c : commandes) {
+            JsonObject jsonCommande = new JsonObject();
+
+            jsonCommande.addProperty("numCommande", c.getNumCommande());
+            jsonCommande.addProperty("client", (c.getClient() != null) ? c.getClient().getId() : null);
+            jsonCommande.addProperty("dateCommande", c.getDateCommande().toString());
+            jsonCommande.addProperty("dateReception",(c.getDateReception() != null) ? c.getDateReception().toString() : null);
+            jsonCommande.addProperty("livreur", (c.getLivreur() != null) ? c.getLivreur().getIdLivreur() : null);
+            jsonCommande.addProperty("poidsTotal", c.getPoidsTotal());
+            jsonCommande.addProperty("prixTotal", c.getPrixTotal());
+
+            JsonArray jsonListeProduitCommande = new JsonArray();
+
+            if (c.getProduitCommande() != null) {
+
+                for (ProduitCommande pc : c.getProduitCommande()) {
+
+                    JsonObject jsonProduitCommande = new JsonObject();
+                    
+                    JsonObject jsonProduit = new JsonObject();
+                    
+                    jsonProduit.addProperty("id", pc.getProduit().getId());
+                    jsonProduit.addProperty("denomination", pc.getProduit().getDenomination());
+                    jsonProduit.addProperty("description", pc.getProduit().getDescription());
+                    jsonProduit.addProperty("prix", pc.getProduit().getPrix());
+                    jsonProduit.addProperty("poids", pc.getProduit().getPoids());
+
+                    jsonProduitCommande.add("produit", jsonProduit);
+                    jsonProduitCommande.addProperty("qte", pc.getQte());
+
+                    jsonListeProduitCommande.add(jsonProduitCommande);
+                }
+
+                jsonCommande.add("produitCommande", jsonListeProduitCommande);
+
+            } else {
+                jsonCommande.addProperty("produitCommande", (Number) null);
+            }
+
+            jsonCommande.addProperty("restaurant", (c.getRestaurant() != null) ? c.getRestaurant().getId() : null);
+
+            jsonListe.add(jsonCommande);
+        }
+
+        JsonObject container = new JsonObject();
+        container.add("commandes", jsonListe);
+        String json = gson.toJson(container);
+        out.println(json);
     }
 
 }
