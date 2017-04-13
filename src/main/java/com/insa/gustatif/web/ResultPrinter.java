@@ -18,8 +18,17 @@ import com.insa.gustatif.metier.modele.LivreurVelo;
 import com.insa.gustatif.metier.modele.Produit;
 import com.insa.gustatif.metier.modele.ProduitCommande;
 import com.insa.gustatif.metier.modele.Restaurant;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -59,15 +68,48 @@ class ResultPrinter {
 
     void printServiceInconnu() {
 
-        out.println("<!DOCTYPE html>");
-        out.println("<html>");
-        out.println("<head>");
-        out.println("<title>Erreur</title>");
-        out.println("</head>");
-        out.println("<body>");
-        out.println("<h1>Service inconnu</h1>");
-        out.println("</body>");
-        out.println("</html>");
+        Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+
+        JsonObject container = new JsonObject();
+        container.addProperty("error", "unknownService");
+        String json = gson.toJson(container);
+        out.println(json);
+
+    }
+
+    void printServiceRequirement(Auth auth, Auth requireAuth, Map<String, String> mandatoryArgs, HashMap<String, String> optionalArgs) {
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+
+        JsonObject requirementObject = new JsonObject();
+        requirementObject.addProperty("needAuth", requireAuth.toString());
+
+        JsonObject mandatoryArgsObject = new JsonObject();
+
+        Iterator entries = mandatoryArgs.entrySet().iterator();
+        while (entries.hasNext()) {
+            Map.Entry entry = (Map.Entry) entries.next();
+            mandatoryArgsObject.addProperty((String) entry.getKey(), (String) entry.getValue());
+        }
+
+        JsonObject optionalArgsObject = new JsonObject();
+
+        entries = optionalArgs.entrySet().iterator();
+        while (entries.hasNext()) {
+            Map.Entry entry = (Map.Entry) entries.next();
+            optionalArgsObject.addProperty((String) entry.getKey(), (String) entry.getValue());
+        }
+
+        requirementObject.add("requiredArgs", mandatoryArgsObject);
+        requirementObject.add("optionalArgs", optionalArgsObject);
+
+        JsonObject container = new JsonObject();
+        container.addProperty("error", "serviceRequirement");
+        container.add("requirement", requirementObject);
+        container.addProperty("Are you auth ?", auth.toString());
+
+        String json = gson.toJson(container);
+        out.println(json);
 
     }
 
@@ -110,10 +152,6 @@ class ResultPrinter {
         String json = gson.toJson(container);
         out.println(json);
 
-    }
-
-    void printDebug(String foo) {
-        out.println(foo);
     }
 
     void printProduitsListAsJSON(List<Produit> produits) {
@@ -282,6 +320,24 @@ class ResultPrinter {
         }
 
         return jsonLivreur;
+    }
+
+    void printErrorAsJSON(Exception e) {
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+       
+
+        JsonObject container = new JsonObject();
+        container.addProperty("error", "uncaughtException");
+        container.addProperty("exceptionMessage", e.getMessage());
+        container.addProperty("exceptionLocalizedMessage", e.getLocalizedMessage());
+        container.addProperty("exceptionStackTrace",  sw.toString());
+        String json = gson.toJson(container);
+        out.println(json);
     }
 
 }

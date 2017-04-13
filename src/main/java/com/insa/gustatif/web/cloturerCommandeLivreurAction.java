@@ -18,9 +18,7 @@ class cloturerCommandeLivreurAction implements Action {
     @Override
     public void execute(HttpServletRequest request) {
 
-        Livreur l = null;
-
-        ServiceMetier.findLivreurById(Long.parseLong(request.getParameter("l")));
+        Livreur l = ServiceMetier.findLivreurById(Long.parseLong(request.getParameter("l")));
 
         ServiceMetier.cloturerCommandeLivreur(l);
 
