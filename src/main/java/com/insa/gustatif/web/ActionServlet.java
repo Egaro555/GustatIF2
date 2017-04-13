@@ -66,8 +66,10 @@ public class ActionServlet extends HttpServlet {
                     Client client = action.getClient();
 
                     if (client != null) {
+
+                        session.removeAttribute("livreur");
                         session.setAttribute("client", client);
-                        
+
                         session.setAttribute("commande", new Commande(client, new ArrayList(), null, null));
 
                         resultPrinter.printClientAsJSON(client);
@@ -76,6 +78,34 @@ public class ActionServlet extends HttpServlet {
                     }
 
                 }
+
+            } else if (serviceName.equals("connexionLivreur") && request.getParameter("idLivreur") != null) {
+
+                connexionLivreurAction action = new connexionLivreurAction();
+                action.execute(request);
+
+                Livreur livreur = action.getLivreur();
+
+                if (livreur != null) {
+                    session.removeAttribute("client");
+                    session.setAttribute("livreur", livreur);
+                    
+                    resultPrinter.printLivreurAsJSON(livreur);
+
+                } else {
+
+                    resultPrinter.printBooleanResultAsJSON(false);
+
+                }
+            } else if (serviceName.equals("deconnexionClient")) {
+
+                resultPrinter.printBooleanResultAsJSON(auth);
+
+                session.removeAttribute("livreur");
+
+                session.removeAttribute("client");
+                session.removeAttribute("commande");
+
             } else if (serviceName.equals("creerClient") && request.getParameter("nom") != null && request.getParameter("prenom") != null && request.getParameter("mail") != null && request.getParameter("adresse") != null) {
 
                 creerClientAction action = new creerClientAction();
@@ -84,13 +114,6 @@ public class ActionServlet extends HttpServlet {
                 boolean result = action.getResult();
 
                 resultPrinter.printBooleanResultAsJSON(result);
-
-            } else if (serviceName.equals("deconnexionClient")) {
-
-                resultPrinter.printBooleanResultAsJSON(auth);
-
-                session.removeAttribute("client");
-                session.removeAttribute("commande");
 
             } else if (auth && serviceName.equals("searchRestaurants") && request.getParameter("research") != null) {
 
@@ -113,7 +136,7 @@ public class ActionServlet extends HttpServlet {
             } else if (auth && serviceName.equals("setProduitCommande") && request.getParameter("p") != null && request.getParameter("qte") != null) {
 
                 setProduitCommandeAction action = new setProduitCommandeAction(session);
-                action.execute(request);                              
+                action.execute(request);
 
                 resultPrinter.printCommandeAsJSON((Commande) session.getAttribute("commande"));
 
@@ -121,22 +144,22 @@ public class ActionServlet extends HttpServlet {
 
                 removeProduitCommandeAction action = new removeProduitCommandeAction(session);
                 action.execute(request);
-                
+
                 resultPrinter.printCommandeAsJSON((Commande) session.getAttribute("commande"));
 
             } else if (auth && serviceName.equals("traiterCommande")) {
-                
+
                 traiterCommandeAction action = new traiterCommandeAction(session);
-                action.execute(request);       
-                
+                action.execute(request);
+
                 resultPrinter.printBooleanResultAsJSON(action.getResult());
 
             } else if (auth && serviceName.equals("cloturerCommandeLivreur") && request.getParameter("l") != null) {
-                
+
                 cloturerCommandeLivreurAction action = new cloturerCommandeLivreurAction();
-                action.execute(request);       
-                
-                resultPrinter.printBooleanResultAsJSON(true);                
+                action.execute(request);
+
+                resultPrinter.printBooleanResultAsJSON(true);
 
             } else if (auth && serviceName.equals("findAllLivreurs")) {
 
@@ -249,12 +272,6 @@ public class ActionServlet extends HttpServlet {
                 boolean result = true;
 
                 resultPrinter.printBooleanResultAsJSON(result);
-
-            } else if (auth && serviceName.equals("connexionLivreur")) {
-
-            } else if (auth && serviceName.equals("traiterCommande")) {
-
-            } else if (auth && serviceName.equals("cloturerCommandeLivreur")) {
 
             } else {
 

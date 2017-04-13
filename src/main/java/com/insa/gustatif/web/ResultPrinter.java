@@ -83,26 +83,8 @@ class ResultPrinter {
         Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
         for (Livreur l : livreurs) {
-            JsonObject jsonLivreur = new JsonObject();
 
-            jsonLivreur.addProperty("id", l.getIdLivreur());
-            jsonLivreur.addProperty("addresse", l.getAdresse());
-            jsonLivreur.addProperty("chargeMaxi", l.getChargeMaxi());
-            jsonLivreur.addProperty("cmdeEnCours", (l.getCmdeEnCours() != null) ? l.getCmdeEnCours().getNumCommande() : null);
-            jsonLivreur.addProperty("latitude", l.getLatitude());
-            jsonLivreur.addProperty("longitude", l.getLongitude());
-
-            if (l instanceof LivreurDrone) {
-                jsonLivreur.addProperty("type", "Drone");
-                jsonLivreur.addProperty("vitesseMoyenne", ((LivreurDrone) l).getVitesseMoyenne());
-            } else if (l instanceof LivreurVelo) {
-                jsonLivreur.addProperty("type", "Velo");
-                jsonLivreur.addProperty("nom", ((LivreurVelo) l).getNom());
-                jsonLivreur.addProperty("prnom", ((LivreurVelo) l).getPrenom());
-                jsonLivreur.addProperty("mail", ((LivreurVelo) l).getMail());
-            }
-
-            jsonListe.add(jsonLivreur);
+            jsonListe.add(encodeLivreurToJSON(l));
         }
 
         JsonObject container = new JsonObject();
@@ -120,7 +102,7 @@ class ResultPrinter {
         for (Client c : clients) {
 
             jsonListe.add(encodeClientToJSON(c));
-            
+
         }
 
         JsonObject container = new JsonObject();
@@ -209,6 +191,15 @@ class ResultPrinter {
 
     }
 
+    void printLivreurAsJSON(Livreur livreur) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        JsonObject container = new JsonObject();
+        container.add("livreur", encodeLivreurToJSON(livreur));
+        String json = gson.toJson(container);
+        out.println(json);
+    }
+
     private JsonObject encodeCommandeToJSON(Commande c) {
 
         JsonObject jsonCommande = new JsonObject();
@@ -256,7 +247,7 @@ class ResultPrinter {
     }
 
     private JsonObject encodeClientToJSON(Client client) {
- 
+
         JsonObject jsonClient = new JsonObject();
 
         jsonClient.addProperty("id", client.getId());
@@ -268,6 +259,29 @@ class ResultPrinter {
         jsonClient.addProperty("longitude", client.getLongitude());
 
         return jsonClient;
+    }
+
+    private JsonObject encodeLivreurToJSON(Livreur livreur) {
+        JsonObject jsonLivreur = new JsonObject();
+
+        jsonLivreur.addProperty("id", livreur.getIdLivreur());
+        jsonLivreur.addProperty("addresse", livreur.getAdresse());
+        jsonLivreur.addProperty("chargeMaxi", livreur.getChargeMaxi());
+        jsonLivreur.addProperty("cmdeEnCours", (livreur.getCmdeEnCours() != null) ? livreur.getCmdeEnCours().getNumCommande() : null);
+        jsonLivreur.addProperty("latitude", livreur.getLatitude());
+        jsonLivreur.addProperty("longitude", livreur.getLongitude());
+
+        if (livreur instanceof LivreurDrone) {
+            jsonLivreur.addProperty("type", "Drone");
+            jsonLivreur.addProperty("vitesseMoyenne", ((LivreurDrone) livreur).getVitesseMoyenne());
+        } else if (livreur instanceof LivreurVelo) {
+            jsonLivreur.addProperty("type", "Velo");
+            jsonLivreur.addProperty("nom", ((LivreurVelo) livreur).getNom());
+            jsonLivreur.addProperty("prnom", ((LivreurVelo) livreur).getPrenom());
+            jsonLivreur.addProperty("mail", ((LivreurVelo) livreur).getMail());
+        }
+
+        return jsonLivreur;
     }
 
 }
